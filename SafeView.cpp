@@ -7,8 +7,8 @@ using namespace cv;
 using namespace cv::dnn;
 
 const float CONFIDENCE_THRESHOLD = 0.4;
-const int INPUT_WIDTH = 600;
-const int INPUT_HEIGHT = 600;
+const int INPUT_WIDTH = 500;
+const int INPUT_HEIGHT = 500;
 
 // Пути к модели и конфигурации
 // 
@@ -20,8 +20,10 @@ const int INPUT_HEIGHT = 600;
 const string MODEL_PATH = "D:/Apps/OpenCV/opencv/sources/samples/dnn/face_detector/res10_300x300_ssd_iter_140000.caffemodel";
 const string CONFIG_PATH = "D:/Apps/OpenCV/opencv/sources/samples/dnn/face_detector/deploy.prototxt";
 
+
 // const int VIDEO_PATH = 0; // if need to see cam
-const string VIDEO_PATH = "D:/Apps/Videos/human_faces_2.mp4";
+const string VIDEO_PATH = "D:/Apps/Videos/Input/human_faces_1_input.mp4";
+const string OUTPUT_VIDEO_PATH = "D:/Apps/Videos/Output/human_faces_1_output.mp4";
 
 void detectAndBlurFaces(Mat& frame, Net& net);
 
@@ -40,6 +42,18 @@ int main() {
         return -1;
     }
 
+    // Получение информации о видео
+    int frameWidth = static_cast<int>(capture.get(CAP_PROP_FRAME_WIDTH));
+    int frameHeight = static_cast<int>(capture.get(CAP_PROP_FRAME_HEIGHT));
+    int fps = static_cast<int>(capture.get(CAP_PROP_FPS));
+
+    // Создание VideoWriter
+    VideoWriter writer(OUTPUT_VIDEO_PATH, VideoWriter::fourcc('H', '2', '6', '4'), fps, Size(frameWidth, frameHeight));
+    if (!writer.isOpened()) {
+        cerr << "Ошибка: Не удалось открыть выходной видеофайл!" << endl;
+        return -1;
+    }
+
     Mat frame;
     while (capture.read(frame)) {
         if (frame.empty()) break;
@@ -47,9 +61,13 @@ int main() {
         // Обнаружение лиц и блюр
         detectAndBlurFaces(frame, net);
 
-        // Отображение кадра
-        imshow("Обнаружение лиц с размытием", frame);
+        // Запись кадра в итоговый файл
+        writer.write(frame);
 
+
+        // Отображение кадра
+        // imshow("Обнаружение лиц с размытием", frame);
+        
         char c = (char)waitKey(10);
         if (c == 27 || c == 'q' || c == 'й' || c == 'Й') break; // Выход
     }
@@ -59,7 +77,7 @@ int main() {
 
 void detectAndBlurFaces(Mat& frame, Net& net) {
     // Создание блоба из изображения
-    Mat blob = blobFromImage(frame, 0.9, Size(INPUT_WIDTH, INPUT_HEIGHT), Scalar(104.0, 177.0, 123.0), false, false);
+    Mat blob = blobFromImage(frame, 0.7, Size(INPUT_WIDTH, INPUT_HEIGHT), Scalar(104.0, 177.0, 123.0), false, false);
     net.setInput(blob);
 
     // Обнаружение лиц
