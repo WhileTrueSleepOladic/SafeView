@@ -1,10 +1,11 @@
 import telebot
 import os
+import subprocess
 from config import BOT_TOKEN
 from change import process_video
 
 # Инициализация бота
-bot = telebot.TeleBot(BOT_TOKEN)
+bot = telebot.TeleBot(BOT_TOKEN)    
 
 # Папки для хранения видео
 INPUT_DIR = "videos/input"
@@ -31,11 +32,17 @@ def handle_video(message):
             new_file.write(downloaded_file)
 
         # Обработка видео
-        process_video(input_path, output_path)
+        process_video(input_path, output_path, "C:/Users/Mickic/Documents/HACKTON/tg_bot/video_processor.exe")
+        
 
         # Отправка обработанного видео
         with open(output_path, 'rb') as video:
             bot.send_video(message.chat.id, video)
+
+        # удаление файлов
+        os.remove(input_path)
+        os.remove(output_path)
+
 
     except Exception as e:
         bot.reply_to(message, f"Произошла ошибка: {e}")
