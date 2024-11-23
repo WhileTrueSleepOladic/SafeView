@@ -1,0 +1,9 @@
+﻿  SafeView.cpp
+D:\Apps\VS\projects\SafeView\SafeView\SafeView.cpp(9,36): warning C4305: инициализация: усечение из "double" в "float"
+D:\Apps\VS\projects\SafeView\SafeView\SafeView.cpp(12,20): warning C4305: инициализация: усечение из "double" в "float"
+  Создание кода
+  1 of 106 functions ( 0.9%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    1 functions had inline decision re-evaluated but remain unchanged
+  Создание кода завершено
+  SafeView.vcxproj -> D:\Apps\VS\projects\SafeView\x64\Release\SafeView.exe
