@@ -1,39 +1,118 @@
+#include <opencv2/opencv.hpp>
+#include <opencv2/dnn.hpp>
 #include <iostream>
-#include <fstream>
-#include <string>
+
+using namespace std;
+using namespace cv;
+using namespace cv::dnn;
+
+const float CONFIDENCE_THRESHOLD = 0.4;
+const int INPUT_WIDTH = 500;
+const int INPUT_HEIGHT = 500;
+
+// Пути к модели и конфигурации
+
+const string MODEL_PATH = "D:/Apps/OpenCV/opencv/sources/samples/dnn/face_detector/core_model.caffemodel";
+const string CONFIG_PATH = "D:/Apps/OpenCV/opencv/sources/samples/dnn/face_detector/deploy.prototxt";
+
+/*
+const string VIDEO_PATH = "D:/Apps/Videos/Input/human_faces_1_input.mp4";
+const string OUTPUT_VIDEO_PATH = "D:/Apps/Videos/Output/human_faces_1_output.mp4";
+*/
+
+void detectAndBlurFaces(Mat& frame, Net& net);
 
 int main(int argc, char* argv[]) {
-    // Проверяем количество аргументов
     if (argc != 3) {
-        std::cerr << "Usage: " << argv[0] << " <input_path> <output_path>" << std::endl;
+        cerr << "Usage: " << argv[0] << " <input_path> <output_path>" << std::endl;
         return 1;
     }
 
     // Получаем пути к файлам
-    std::string input_path = argv[1];
-    std::string output_path = argv[2];
+    string input_path = argv[1];
+    string output_path = argv[2];
 
-    // Открываем входной файл
-    std::ifstream input_file(input_path, std::ios::binary);
-    if (!input_file) {
-        std::cerr << "Error: Cannot open input file: " << input_path << std::endl;
-        return 1;
+    // Загрузка модели DNN
+    Net net = readNetFromCaffe(CONFIG_PATH, MODEL_PATH);
+    if (net.empty()) {
+        cerr << "Ошибка: Не удалось загрузить модель DNN!" << endl;
+        return -1;
     }
 
-    // Открываем выходной файл
-    std::ofstream output_file(output_path, std::ios::binary);
-    if (!output_file) {
-        std::cerr << "Error: Cannot create output file: " << output_path << std::endl;
-        return 1;
+    // Запуск захвата видео (веб-камера)
+    VideoCapture capture(input_path);
+    if (!capture.isOpened()) {
+        cerr << "Ошибка: Не удалось открыть камеру!" << endl;
+        return -1;
     }
 
-    // Копируем содержимое файла
-    output_file << input_file.rdbuf();
+    // Получение информации о видео
+    int frameWidth = static_cast<int>(capture.get(CAP_PROP_FRAME_WIDTH));
+    int frameHeight = static_cast<int>(capture.get(CAP_PROP_FRAME_HEIGHT));
+    int fps = static_cast<int>(capture.get(CAP_PROP_FPS));
 
-    // Закрываем файлы
-    input_file.close();
-    output_file.close();
+    // Создание VideoWriter
+    VideoWriter writer(output_path, VideoWriter::fourcc('H', '2', '6', '4'), fps, Size(frameWidth, frameHeight));
+    if (!writer.isOpened()) {
+        cerr << "Ошибка: Не удалось открыть выходной видеофайл!" << endl;
+        return -1;
+    }
 
-    std::cout << "Processing complete. Output saved to: " << output_path << std::endl;
+    Mat frame;
+    while (capture.read(frame)) {
+        if (frame.empty()) break;
+
+        // Обнаружение лиц и блюр
+        detectAndBlurFaces(frame, net);
+
+        // Запись кадра в итоговый файл
+        writer.write(frame);
+
+
+        // Отображение кадра
+        // imshow("Обнаружение лиц с размытием", frame);
+        
+        char c = (char)waitKey(10);
+        if (c == 27 || c == 'q' || c == 'й' || c == 'Й') break; // Выход
+    }
+
     return 0;
+}
+
+void detectAndBlurFaces(Mat& frame, Net& net) {
+    // Создание блоба из изображения
+    Mat blob = blobFromImage(frame, 0.7, Size(INPUT_WIDTH, INPUT_HEIGHT), Scalar(104.0, 177.0, 123.0), false, false);
+    net.setInput(blob);
+
+    // Обнаружение лиц
+    Mat detections = net.forward();
+
+    // Разбор результатов
+    Mat detectionMat(detections.size[2], detections.size[3], CV_32F, detections.ptr<float>());
+    for (int i = 0; i < detectionMat.rows; i++) {
+        float confidence = detectionMat.at<float>(i, 2);
+
+        if (confidence > CONFIDENCE_THRESHOLD) {
+            int x1 = static_cast<int>(detectionMat.at<float>(i, 3) * frame.cols);
+            int y1 = static_cast<int>(detectionMat.at<float>(i, 4) * frame.rows);
+            int x2 = static_cast<int>(detectionMat.at<float>(i, 5) * frame.cols);
+            int y2 = static_cast<int>(detectionMat.at<float>(i, 6) * frame.rows);
+
+            // Проверка границ (на случай некорректных координат)
+
+            x1 = max(0, x1);
+            y1 = max(0, y1);
+            x2 = min(frame.cols - 1, x2);
+            y2 = min(frame.rows - 1, y2);
+
+            // Размытие области лица
+            Rect faceRect(x1, y1, x2 - x1, y2 - y1);
+            Mat faceROI = frame(faceRect); // ROI лица
+            GaussianBlur(faceROI, faceROI, Size(51, 51), 30); // Применение размытия
+            
+            putText(frame, format("Confidence: %.2f", confidence), Point(x1, y1 - 10),
+                FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 0, 0), 1);
+               
+        }   
+    }
 }

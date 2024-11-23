@@ -22,4 +22,3 @@ def process_video(input_path, output_path, cpp_processor_path):
         print(f"Ошибка при выполнении C++ программы: {e}")
     except Exception as e:
         print(f"Общая ошибка: {e}")
-
