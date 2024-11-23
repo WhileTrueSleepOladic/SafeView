@@ -1,0 +1,3 @@
+﻿  faceDetect.cpp
+C:\Users\Mickic\Documents\HACKTON\faceDetect\faceDetect\faceDetect.cpp(10,29): warning C4305: инициализация: усечение из "double" в "float"
+  faceDetect.vcxproj -> C:\Users\Mickic\Documents\HACKTON\faceDetect\x64\Debug\faceDetect.exe
