@@ -7,13 +7,12 @@ using namespace cv;
 using namespace cv::dnn;
 
 const float CONFIDENCE_THRESHOLD = 0.4;
-const int INPUT_WIDTH = 500;
-const int INPUT_HEIGHT = 500;
+const int INPUT_WIDTH = 640;
+const int INPUT_HEIGHT = 320;
 
 // Пути к модели и конфигурации
-
-const string MODEL_PATH = "D:/Apps/OpenCV/opencv/sources/samples/dnn/face_detector/core_model.caffemodel";
-const string CONFIG_PATH = "D:/Apps/OpenCV/opencv/sources/samples/dnn/face_detector/deploy.prototxt";
+const string MODEL_PATH = "C:/opencv/sources/samples/dnn/face_detector/res10_300x300_ssd_iter_140000.caffemodel";
+const string CONFIG_PATH = "C:/opencv/sources/samples/dnn/face_detector/deploy.prototxt";
 
 /*
 const string VIDEO_PATH = "D:/Apps/Videos/Input/human_faces_1_input.mp4";
@@ -52,7 +51,7 @@ int main(int argc, char* argv[]) {
     int fps = static_cast<int>(capture.get(CAP_PROP_FPS));
 
     // Создание VideoWriter
-    VideoWriter writer(output_path, VideoWriter::fourcc('H', '2', '6', '4'), fps, Size(frameWidth, frameHeight));
+    VideoWriter writer(output_path, VideoWriter::fourcc('m', 'p', '4', 'v'), fps, Size(frameWidth, frameHeight));
     if (!writer.isOpened()) {
         cerr << "Ошибка: Не удалось открыть выходной видеофайл!" << endl;
         return -1;
@@ -67,10 +66,6 @@ int main(int argc, char* argv[]) {
 
         // Запись кадра в итоговый файл
         writer.write(frame);
-
-
-        // Отображение кадра
-        // imshow("Обнаружение лиц с размытием", frame);
         
         char c = (char)waitKey(10);
         if (c == 27 || c == 'q' || c == 'й' || c == 'Й') break; // Выход
@@ -108,11 +103,7 @@ void detectAndBlurFaces(Mat& frame, Net& net) {
             // Размытие области лица
             Rect faceRect(x1, y1, x2 - x1, y2 - y1);
             Mat faceROI = frame(faceRect); // ROI лица
-            GaussianBlur(faceROI, faceROI, Size(51, 51), 30); // Применение размытия
-            
-            putText(frame, format("Confidence: %.2f", confidence), Point(x1, y1 - 10),
-                FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 0, 0), 1);
-               
+            GaussianBlur(faceROI, faceROI, Size(51, 51), 30); // Применение размытия     
         }   
     }
 }
